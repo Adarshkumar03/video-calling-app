@@ -1,27 +1,32 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSocket } from "../context/SocketProvider";
+import { useNavigate } from "react-router-dom";
 const Lobby = () => {
   const [email, setEmail] = useState("");
-  const [roomId, setRoomId] = useState("");
-
+  const [room, setRoomId] = useState("");
+  const navigate = useNavigate();
   const socket = useSocket();
 
   const handleSubmit = useCallback(
     (e) => {
       e.preventDefault();
       socket.emit("room:join", {
-        roomId,
+        room,
         email,
       });
     },
-    [email, roomId, socket]
+    [email, room, socket]
   );
 
+  const handleJoinRoom = useCallback((data)=>{
+    const {room} = data;
+    navigate(`/room/${room}`)
+  }, [navigate]);
+
   useEffect(()=>{
-    socket.on("room:join", data => {
-        console.log(`Data from BE ${data}`);
-    });
-  }, [socket])
+    socket.on("room:join", handleJoinRoom);
+    return () => {socket.off("room:join", handleJoinRoom)}
+  }, [socket, handleJoinRoom])
 
   return (
     <div>
@@ -41,7 +46,7 @@ const Lobby = () => {
         <input
           type="text"
           name="room"
-          value={roomId}
+          value={room}
           onChange={(e) => setRoomId(e.target.value)}
           id="room"
           required
